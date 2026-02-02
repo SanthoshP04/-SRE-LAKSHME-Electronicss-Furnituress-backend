@@ -52,21 +52,33 @@ app.use(express.json());
 // Initialize Firebase Admin SDK using environment variables
 let db;
 try {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
+  let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey
-    })
-  });
-  db = admin.firestore();
-  console.log('✅ Firebase Admin SDK initialized');
+  if (privateKey) {
+    // Remove surrounding quotes if present (Vercel sometimes adds them)
+    privateKey = privateKey.replace(/^["']|["']$/g, '');
+    // Handle escaped newlines - try multiple patterns
+    privateKey = privateKey.replace(/\\n/g, '\n');
+    // Also handle double-escaped newlines
+    privateKey = privateKey.replace(/\\\\n/g, '\n');
+  }
+
+  if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
+    console.error('❌ Firebase credentials missing. Required: FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY');
+  } else {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: privateKey
+      })
+    });
+    db = admin.firestore();
+    console.log('✅ Firebase Admin SDK initialized');
+  }
 } catch (error) {
   console.error('❌ Firebase Admin SDK initialization error:', error.message);
+  console.error('   Make sure FIREBASE_PRIVATE_KEY is correctly formatted');
 }
 
 // Configure Nodemailer with Gmail
