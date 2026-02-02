@@ -88,6 +88,24 @@ transporter.verify((error, success) => {
 });
 
 /**
+ * Root Route - Welcome/Health Check
+ */
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: '🚀 SRE LAKSHME Backend API is running!',
+    endpoints: [
+      'POST /api/send-otp',
+      'POST /api/verify-otp',
+      'POST /api/newsletter/subscribe',
+      'POST /api/notify-price-drop',
+      'POST /api/upload/profile-image',
+      'GET /api/health'
+    ]
+  });
+});
+
+/**
  * Generate a random 6-digit OTP
  */
 function generateOTP() {
