@@ -596,6 +596,50 @@ app.post('/api/upload/profile-image', upload.single('image'), async (req, res) =
 });
 
 /**
+ * Upload Product Image to Cloudinary
+ * POST /api/upload/product-image
+ */
+app.post('/api/upload/product-image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file provided' });
+    }
+
+    // Upload to Cloudinary using a Promise wrapper
+    const uploadResult = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'products',
+          public_id: `product_${Date.now()}`,
+          transformation: [
+            { width: 800, height: 800, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    console.log(`✅ Product image uploaded:`, uploadResult.secure_url);
+
+    res.json({
+      success: true,
+      message: 'Product image uploaded successfully',
+      imageUrl: uploadResult.secure_url,
+      publicId: uploadResult.public_id
+    });
+
+  } catch (error) {
+    console.error('❌ Error uploading product image:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to upload image. Please try again.' });
+  }
+});
+
+/**
  * POST /api/notify-price-drop
  * Sends email notifications to users who have the product in their wishlist when price is reduced
  */
